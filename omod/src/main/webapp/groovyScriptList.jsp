@@ -15,8 +15,8 @@
 <%@ include file="/WEB-INF/template/include.jsp" %>
 <openmrs:require privilege="List Groovy Scripts" otherwise="/login.htm" redirect="/module/groovy/groovy.list"/>
 <%@ include file="/WEB-INF/template/header.jsp" %>
-<link rel="stylesheet" type="text/css"
-      href="${pageContext.request.contextPath}/moduleResources/groovy/css/main.css"/>
+<!--<link rel="stylesheet" type="text/css"
+      href="${pageContext.request.contextPath}/moduleResources/groovy/css/main.css"/>-->
 
 <%@ include file="localHeader.jsp" %>
 

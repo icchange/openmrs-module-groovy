@@ -16,6 +16,7 @@ package org.openmrs.module.groovy.api.db;
 import java.util.List;
 
 import org.openmrs.module.groovy.GroovyScript;
+import org.openmrs.module.groovy.GroovyUser;
 import org.openmrs.module.groovy.api.service.GroovyService;
 import org.springframework.stereotype.Component;
 
@@ -33,4 +34,13 @@ public interface GroovyDAO {
     void deleteGroovyScript(GroovyScript script);
 
 	GroovyScript getScript(String script);
+
+
+	List<GroovyUser> getAllUsers();
+
+    GroovyUser getUser(Integer id);
+
+    GroovyUser saveUser(GroovyUser user);
+
+    void deleteUser(GroovyUser user);
 }

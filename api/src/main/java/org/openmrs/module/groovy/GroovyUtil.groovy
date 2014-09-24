@@ -80,7 +80,7 @@ class GroovyUtil {
   static Object eval(final String script) throws CompilationFailedException {
     // this should never happen as the DWR method does the same check; but this is an important safety net that
     // must be in place.
-    if(!Context.hasPrivilege("Run Groovy Scripts")) {
+    if(!Context.hasPrivilege("Run Groovy Scripts") && !Context.hasPrivilege("Run Groovy Reports")) {
       throw new APIAuthenticationException("You do not have sufficient privileges to run Groovy Scripts")
     }
     return getShell().parse(script).run()

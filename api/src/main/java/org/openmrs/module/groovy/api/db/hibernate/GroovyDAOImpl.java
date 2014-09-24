@@ -22,6 +22,7 @@ import org.hibernate.SessionFactory;
 import org.hibernate.criterion.Order;
 import org.hibernate.criterion.Restrictions;
 import org.openmrs.module.groovy.GroovyScript;
+import org.openmrs.module.groovy.GroovyUser;
 import org.openmrs.module.groovy.api.db.GroovyDAO;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -78,4 +79,28 @@ public class GroovyDAOImpl implements GroovyDAO {
 		return null; 
 		
 	}
+
+
+	@SuppressWarnings("unchecked")
+	public List<GroovyUser> getAllUsers() {
+        Criteria crit = sessionFactory.getCurrentSession().createCriteria(GroovyUser.class);
+        crit.addOrder(Order.asc("id"));        
+        return (List<GroovyUser>)crit.list();
+    }
+
+    
+    public GroovyUser getUser(Integer id) {
+        return (GroovyUser) sessionFactory.getCurrentSession().get(GroovyUser.class, id);
+    }
+
+    
+    public GroovyUser saveUser(GroovyUser user) {
+        sessionFactory.getCurrentSession().saveOrUpdate(user);
+        return user;
+    }
+
+    
+    public void deleteUser(GroovyUser user) {
+        sessionFactory.getCurrentSession().delete(user);
+    }
 }

@@ -12,4 +12,9 @@
 			<spring:message code="groovy.manage"/>
 		</a>
 	</li>
+	<li <c:if test='<%= request.getRequestURI().contains("groovyUserList") %>'>class="active"</c:if>>
+		<a href="user.list">
+			<spring:message code="groovy.manage.user"/>
+		</a>
+	</li>
 </ul>

@@ -17,6 +17,7 @@ import java.util.List;
 
 import org.openmrs.api.OpenmrsService;
 import org.openmrs.module.groovy.GroovyScript;
+import org.openmrs.module.groovy.GroovyUser;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -53,5 +54,15 @@ public interface GroovyService extends OpenmrsService {
      */
     String[] evaluate(final String script);
 
-	
+	@Transactional(readOnly=true)
+    List<GroovyUser> getAllUsers();
+
+    @Transactional(readOnly=true)
+    GroovyUser getUser(Integer id);
+    
+    @Transactional
+    GroovyUser saveUser(GroovyUser user);
+
+    @Transactional
+    void deleteUser(GroovyUser user);	
 }

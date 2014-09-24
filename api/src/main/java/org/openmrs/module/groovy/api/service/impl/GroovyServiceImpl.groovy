@@ -18,6 +18,7 @@ import org.openmrs.api.context.Context;
 import org.openmrs.module.groovy.api.db.GroovyDAO;
 import org.openmrs.module.groovy.api.service.GroovyService;
 import org.openmrs.module.groovy.GroovyScript;
+import org.openmrs.module.groovy.GroovyUser;
 import org.openmrs.User;
 
 import java.util.List;
@@ -84,5 +85,29 @@ public class GroovyServiceImpl extends BaseOpenmrsService implements GroovyServi
 		return dao.getScript(scriptName);
 	}
 
+	public List<GroovyUser> getAllUsers() {
+		return dao.getAllUsers();
+	}
 
+	public GroovyUser getUser(final Integer id) {
+		return dao.getUser(id);
+	}
+
+
+	public void deleteUser(final GroovyUser user) {
+		dao.deleteUser(user);
+	}
+
+
+	public GroovyUser saveUser(final GroovyUser user) {
+		// let's prevent a lovely NPE from occuring.
+		if (!user)
+			throw new IllegalArgumentException("user object cannot be null");
+		if (!user.user)
+			throw new IllegalArgumentException("user cannot be null");
+		if (!user.location)
+			throw new IllegalArgumentException("location cannot be null");
+		dao.saveUser(user);
+		return user;
+	}
 }

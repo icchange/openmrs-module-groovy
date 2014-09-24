@@ -19,7 +19,7 @@ import org.openmrs.module.groovy.GroovyUtil
 class DWRGroovyService {
 
   String[] eval(String script) {     
-    if(Context.hasPrivilege("Run Groovy Scripts")) {
+    if(Context.hasPrivilege("Run Groovy Scripts") || Context.hasPrivilege("Run Groovy Reports")) {
       return GroovyUtil.getService().evaluate(script);
     }
     return ["Insufficient Privileges","",""] as String[];

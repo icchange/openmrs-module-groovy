@@ -27,4 +27,17 @@
 
 	</class>
 
+	<class name="GroovyUser" table="groovy_users">
+
+		<id name="id" type="int" column="id" unsaved-value="0">
+			<generator class="native" />
+		</id>
+
+		<many-to-one name="user" class="org.openmrs.User" not-null="true" />
+
+		<many-to-one name="location" class="org.openmrs.Location" not-null="true" />
+
+
+	</class>
+
 </hibernate-mapping>

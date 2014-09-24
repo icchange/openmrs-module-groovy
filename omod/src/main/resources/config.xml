@@ -25,7 +25,12 @@
         <point>org.openmrs.admin.list</point>
         <class>@MODULE_PACKAGE@.web.extension.html.AdminList</class>
     </extension>
+    <extension>
+		<point>org.openmrs.gutter.tools</point>
+		<class>@MODULE_PACKAGE@.web.extension.GutterListExt</class>
+	</extension>
     <!-- Extensions -->
+
 	<!-- Required Privileges -->
     <privilege>
         <name>Run Groovy Scripts</name>
@@ -35,6 +40,16 @@
     <privilege>
         <name>List Groovy Scripts</name>
         <description>Allows user to view Groovy scripts which are saved.</description>
+    </privilege>
+
+    <privilege>
+        <name>List Groovy Users</name>
+        <description>Allows user to view Groovy users which are saved.</description>
+    </privilege>
+
+    <privilege>
+        <name>Run Groovy Reports</name>
+        <description>Allows user to run reports based on existing Groovy scripts.</description>
     </privilege>
 
     <!-- /Required Privileges -->

@@ -49,8 +49,9 @@ public class AdminList extends AdministrationSectionExt {
 		
 		Map<String, String> map = new HashMap<String, String>();
 		
-		map.put("module/groovy/groovy.form", "groovy.scripting-form");
+		map.put("module/groovy/groovy.form","groovy.scripting-form");
         map.put("module/groovy/groovy.list","groovy.manage");
+        map.put("module/groovy/user.list","groovy.manage.user");
 		
 		return map;
 	}

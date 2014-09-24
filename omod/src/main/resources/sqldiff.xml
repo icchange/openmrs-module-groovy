@@ -37,5 +37,22 @@
 			) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 		</sql>
 -	</diff>
-	
+	<diff>
+		<version>2.2.5</version>
+		<author>Zaw Aung</author>
+		<date>25 August 2014</date>
+		<description>
+			 Save the script to the database
+		</description>
+		<sql>
+		   CREATE TABLE IF NOT EXISTS `groovy_users` (
+			  `id` int(32) NOT NULL auto_increment,
+			  `user` int(11) NOT NULL default '0',
+			  `location` int(11) NOT NULL default '0',
+			  PRIMARY KEY  (`id`),
+			  CONSTRAINT `User` FOREIGN KEY (`user`) REFERENCES `users` (`user_id`),
+			  CONSTRAINT `Location` FOREIGN KEY (`location`) REFERENCES `location` (`location_id`)
+			) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+		</sql>
+-	</diff>
 </sqldiff>
