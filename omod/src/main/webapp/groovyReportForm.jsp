@@ -46,7 +46,7 @@
 <p>
 <c:choose>
 	<c:when test="${ output!=null }">
-		<div style="border: dashed 1px #000;" border="1px; " >
+		<div style="">
 		${output}
 		</div>
 	</c:when>
