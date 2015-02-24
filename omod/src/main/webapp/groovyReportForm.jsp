@@ -27,6 +27,8 @@
 					<option value="-1"></option>
 					<c:forEach var="script" items="${scripts}">
 						<option value="${script.id}">${script.name}</option>
+						<!-- Here for each script we will separate public scripts from personal ones.
+						ONLY public scripts will be displayed -->
 					</c:forEach>
 				</select>
 			</td>
@@ -40,7 +42,6 @@
 			</td>
         </tr>
     </table>
-	<br>
 	<input type="submit" value="<spring:message code="groovy.report.run"/>"/>
 </form>
 <p>

@@ -29,6 +29,10 @@
 		<point>org.openmrs.gutter.tools</point>
 		<class>@MODULE_PACKAGE@.web.extension.GutterListExt</class>
 	</extension>
+    <extension>
+		<point>org.openmrs.gutter.tools</point>
+		<class>@MODULE_PACKAGE@.web.extension.CustomReportGutterListExt</class>
+	</extension>
     <!-- Extensions -->
 
 	<!-- Required Privileges -->
@@ -50,6 +54,11 @@
     <privilege>
         <name>Run Groovy Reports</name>
         <description>Allows user to run reports based on existing Groovy scripts.</description>
+    </privilege>
+        
+    <privilege>
+        <name>Run Custom Reports</name>
+        <description>Allows user to use report generating tool or existing Groovy scripts.</description>
     </privilege>
 
     <!-- /Required Privileges -->
