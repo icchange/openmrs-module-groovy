@@ -116,6 +116,7 @@ public class CustomReportFormController {
 			"def location='"+location+"'\n"+
 			"def minAge='"+minAge+"'\n"+
 			"def maxAge='"+maxAge+"'\n"+
+			//"def userId='"+currentUser.getId()+"'\n"+
 			script.getScript();
     	try
     	{

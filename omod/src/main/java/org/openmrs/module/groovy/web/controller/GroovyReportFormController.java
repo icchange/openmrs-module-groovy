@@ -94,7 +94,8 @@ public class GroovyReportFormController {
     			break;
     		}
     	}
-    	String scriptString="def fromDate='"+fromDate+"'\n"+
+    	String scriptString="" + "def userId='"+ String.valueOf(currentUser.getId())+"'\n"+
+    		"def fromDate='"+fromDate+"'\n"+
 			"def toDate='"+toDate+"'\n"+
 			"def location='"+location+"'\n"+
 			script.getScript();

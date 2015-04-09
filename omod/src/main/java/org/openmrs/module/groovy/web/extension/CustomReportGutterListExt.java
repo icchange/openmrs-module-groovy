@@ -14,7 +14,7 @@ public class CustomReportGutterListExt extends LinkExt {
 	}
 
 	public String getRequiredPrivilege() {
-		return "Run General Reports";
+		return "Run Custom Reports";
 	}
 
 }
