@@ -580,14 +580,14 @@ public class CustomReportFormController {
 			"def maxAge='"+maxAge+"'\n"+
 			script.getScript();
     	
-    	String addIn = "";
+    	String addIn = "def diagnosisRows=[[1, \"\", \"\", \"\", \"\", ]] \n diagnosisRows.pop() \n ";
     	for (Integer i=1; i<=9; i++){
     		if(parameters[i-1][0] != null && parameters[i-1][0] != ""){
-    			addIn += "def conId"+i.toString()+"='"+parameters[i-1][0]+"'\n" +
-    				"def name"+i.toString()+"='"+parameters[i-1][1]+"'\n" +
-    				"def type"+i.toString()+"='"+parameters[i-1][2]+"'\n" +
-    				"def op"+i.toString()+"='"+parameters[i-1][3]+"'\n" +
-    				"def val"+i.toString()+"='"+parameters[i-1][4]+"'\n";
+    			addIn += "diagnosisRows.push(["	+ parameters[i-1][0]+", \"" 
+    											+ parameters[i-1][1]+"\", \"" 
+    											+ parameters[i-1][2]+"\", \"" 
+    											+ parameters[i-1][3]+"\", \"" 
+    											+ parameters[i-1][4]+"\"]) \n ";
     		}
     	}
     	
