@@ -26,149 +26,159 @@
 <p>
 <div class="noprint">
 <form method="post">
-	<table border="1px; " >
-        <tr>
-        	<td>Report Name: </td>
-            <td>
-            	<select name="id">
-					<option value="-1"></option>
-					<c:forEach var="script" items="${scripts}">
-						<option value="${script.id}" <c:if test="${selectId == script.id}">selected</c:if>>${script.name}</option>
-						<!-- Here for each script we will separate public scripts from personal ones.
-						ONLY private scripts will be displayed -->
+	<table>
+		<tr>
+			<td>
+				<table border="1px; " >
+			        <tr>
+			        	<td>Report Name: </td>
+			            <td>
+			            	<select name="id">
+								<option value="-1"></option>
+								<c:forEach var="script" items="${scripts}">
+									<option value="${script.id}" <c:if test="${selectId == script.id}">selected</c:if>>${script.name}</option>
+									<!-- Here for each script we will separate public scripts from personal ones.
+									ONLY private scripts will be displayed -->
+								</c:forEach>
+							</select>
+						</td>
+			        </tr>
+			        <tr>
+			        	<td>Date Range: </td>
+			            <td>
+			            	<input id="fromDate" name="fromDate" type="date" value="${fromDate}"/>
+							-
+							<input id="toDate" name="toDate" type="date" value="${toDate}"/>
+						</td>
+			        </tr>
+			        <tr>
+			        	<td>Age Range: </td>
+			            <td>
+			            	<input id="minAge" name="minAge" type="number" value="${minAge}"/>
+							-
+							<input id="maxAge" name="maxAge" type="number" value="${maxAge}"/>
+						</td>
+			        </tr>
+			        <c:forEach var="i" begin="1" end="9">
+						<c:if test="${parameters[i-1][0] != null && parameters[i-1][0] != ''}">
+						   	<tr id="row${i}">
+								<td colspan="2">
+									<!-- Hidden value - conceptId -->
+									<input id="conId${i}" name="conId${i}" style="display:none" value="${parameters[i-1][0]}"/>
+									
+									<!-- Displaying the concept name -->
+									${parameters[i-1][1]}
+									
+									<!-- Keeping concept name as hidden input -->
+									<input id="name${i}" name="name${i}" style="display:none" value="${parameters[i-1][1]}"/>
+									
+									<!-- Keeping concept type as a hidden input -->
+									<input id="type${i}" name="type${i}" style="display:none" value="${parameters[i-1][2]}"/>
+									
+									<!-- Displaying operators based on concept type -->
+									<c:if test="${parameters[i-1][2] == '1'}"><!-- Numeric -->
+										<select name="op${i}">							
+											<option value="=" <c:if test="${'=' == parameters[i-1][3]}">selected</c:if>>Equals to</option>							
+											<option value="<" <c:if test="${'<' == parameters[i-1][3]}">selected</c:if>>Less Than</option>						
+											<option value=">" <c:if test="${'>' == parameters[i-1][3]}">selected</c:if>>More Than</option>						
+											<option value="=<" <c:if test="${'=<' == parameters[i-1][3]}">selected</c:if>>Less Than or Equals to</option>			
+											<option value=">=" <c:if test="${'>=' == parameters[i-1][3]}">selected</c:if>>More Than or Equals to</option>	
+										</select>
+										<!-- Here we will enter the provided comparison values -->
+										<input id="val${i}" name="val${i}" value="${parameters[i-1][4]}"/>
+									</c:if>
+									<c:if test="${parameters[i-1][2] == '2'}"><!-- Coded -->
+									</c:if>
+									<c:if test="${parameters[i-1][2] == '3'}"><!-- Text -->
+										<select name="op${i}">			
+											<option value="="  <c:if test="${'=' == parameters[i-1][3]}">selected</c:if>>Equals</option>
+											<option value="LIKE"  <c:if test="${'LIKE' == parameters[i-1][3]}">selected</c:if>>Like</option>
+										</select>
+										
+										<!-- Here we will enter the provided comparison values -->
+										<input id="val${i}" name="val${i}" value="${parameters[i-1][4]}"/>
+									</c:if>
+									<c:if test="${parameters[i-1][2] == '4'}"><!-- Type N/A -->
+									</c:if>
+									<c:if test="${parameters[i-1][2] == '5'}"><!-- Document -->
+									</c:if>
+									<c:if test="${parameters[i-1][2] == '6'}"><!-- Date -->
+										<select name="op${i}">							
+											<option value="=" <c:if test="${'=' == parameters[i-1][3]}">selected</c:if>>Equals to</option>							
+											<option value="<" <c:if test="${'<' == parameters[i-1][3]}">selected</c:if>>Less Than</option>						
+											<option value=">" <c:if test="${'>' == parameters[i-1][3]}">selected</c:if>>More Than</option>						
+											<option value="=<" <c:if test="${'=<' == parameters[i-1][3]}">selected</c:if>>Less Than or Equals to</option>			
+											<option value=">=" <c:if test="${'>=' == parameters[i-1][3]}">selected</c:if>>More Than or Equals to</option>	
+										</select>
+										
+										<!-- Here we will enter the provided comparison values -->
+										<input id="val${i}" name="val${i}" value="${parameters[i-1][4]}"/>
+									</c:if>
+									<c:if test="${parameters[i-1][2] == '7'}"><!-- Time -->
+										<select name="op${i}">							
+											<option value="=" <c:if test="${'=' == parameters[i-1][3]}">selected</c:if>>Equals to</option>							
+											<option value="<" <c:if test="${'<' == parameters[i-1][3]}">selected</c:if>>Less Than</option>						
+											<option value=">" <c:if test="${'>' == parameters[i-1][3]}">selected</c:if>>More Than</option>						
+											<option value="=<" <c:if test="${'=<' == parameters[i-1][3]}">selected</c:if>>Less Than or Equals to</option>			
+											<option value=">=" <c:if test="${'>=' == parameters[i-1][3]}">selected</c:if>>More Than or Equals to</option>	
+										</select>
+										
+										<!-- Here we will enter the provided comparison values -->
+										<input id="val${i}" name="val${i}" value="${parameters[i-1][4]}"/>
+									</c:if>
+									<c:if test="${parameters[i-1][2] == '8'}"><!-- Datetime -->
+										<select name="op${i}">							
+											<option value="=" <c:if test="${'=' == parameters[i-1][3]}">selected</c:if>>Equals to</option>							
+											<option value="<" <c:if test="${'<' == parameters[i-1][3]}">selected</c:if>>Less Than</option>						
+											<option value=">" <c:if test="${'>' == parameters[i-1][3]}">selected</c:if>>More Than</option>						
+											<option value="=<" <c:if test="${'=<' == parameters[i-1][3]}">selected</c:if>>Less Than or Equals to</option>			
+											<option value=">=" <c:if test="${'>=' == parameters[i-1][3]}">selected</c:if>>More Than or Equals to</option>	
+										</select>
+										
+										<!-- Here we will enter the provided comparison values -->
+										<input id="val${i}" name="val${i}" value="${parameters[i-1][4]}"/>
+									</c:if>
+									<!-- There is not type #9 -->
+									<c:if test="${parameters[i-1][2] == '10'}"><!-- Boolean -->
+										<select name="op${i}">							
+											<option value="IS">Is</option>											
+											<option value="IS NOT">Is Not</option>	
+										</select>	
+										
+										<!-- Here we will enter the provided comparison values -->
+										<input id="val${i}" name="val${i}" value="${parameters[i-1][4]}"/>
+									</c:if>
+									<c:if test="${parameters[i-1][2] == '11'}"><!-- Rule -->
+									</c:if>
+									<c:if test="${parameters[i-1][2] == '12'}"><!-- Structured Numeric -->
+									</c:if>
+									<c:if test="${parameters[i-1][2] == '13'}"><!-- Complex -->
+									</c:if>	
+									
+									<input type='button' name="remove${i}" value="Remove Criteria" align="right" onclick="deleteRow(this)"/>
+								</td>
+							</tr>
+						</c:if>
 					</c:forEach>
-				</select>
-			</td>
-        </tr>
-        <tr>
-        	<td>Date Range: </td>
-            <td>
-            	<input id="fromDate" name="fromDate" type="date" value="${fromDate}"/>
-				-
-				<input id="toDate" name="toDate" type="date" value="${toDate}"/>
-			</td>
-        </tr>
-        <tr>
-        	<td>Age Range: </td>
-            <td>
-            	<input id="minAge" name="minAge" type="number" value="${minAge}"/>
-				-
-				<input id="maxAge" name="maxAge" type="number" value="${maxAge}"/>
-			</td>
-        </tr>
-        <c:forEach var="i" begin="1" end="9">
-			<c:if test="${parameters[i-1][0] != null && parameters[i-1][0] != ''}">
-			   	<tr id="row${i}">
-					<td colspan="2">
-						<!-- Hidden value - conceptId -->
-						<input id="conId${i}" name="conId${i}" style="display:none" value="${parameters[i-1][0]}"/>
-						
-						<!-- Displaying the concept name -->
-						${parameters[i-1][1]}
-						
-						<!-- Keeping concept name as hidden input -->
-						<input id="name${i}" name="name${i}" style="display:none" value="${parameters[i-1][1]}"/>
-						
-						<!-- Keeping concept type as a hidden input -->
-						<input id="type${i}" name="type${i}" style="display:none" value="${parameters[i-1][2]}"/>
-						
-						<!-- Displaying operators based on concept type -->
-						<c:if test="${parameters[i-1][2] == '1'}"><!-- Numeric -->
-							<select name="op${i}">							
-								<option value="=" <c:if test="${'=' == parameters[i-1][3]}">selected</c:if>>Equals to</option>							
-								<option value="<" <c:if test="${'<' == parameters[i-1][3]}">selected</c:if>>Less Than</option>						
-								<option value=">" <c:if test="${'>' == parameters[i-1][3]}">selected</c:if>>More Than</option>						
-								<option value="=<" <c:if test="${'=<' == parameters[i-1][3]}">selected</c:if>>Less Than or Equals to</option>			
-								<option value=">=" <c:if test="${'>=' == parameters[i-1][3]}">selected</c:if>>More Than or Equals to</option>	
-							</select>
-							
-							<!-- Here we will enter the provided comparison values -->
-							<input id="val${i}" name="val${i}" value="${parameters[i-1][4]}"/>
-						</c:if>
-						<c:if test="${parameters[i-1][2] == '2'}"><!-- Coded -->
-						</c:if>
-						<c:if test="${parameters[i-1][2] == '3'}"><!-- Text -->
-							<select name="op${i}">			
-								<option value="="  <c:if test="${'=' == parameters[i-1][3]}">selected</c:if>>Equals</option>
-								<option value="LIKE"  <c:if test="${'LIKE' == parameters[i-1][3]}">selected</c:if>>Like</option>
-							</select>
-							
-							<!-- Here we will enter the provided comparison values -->
-							<input id="val${i}" name="val${i}" value="${parameters[i-1][4]}"/>
-						</c:if>
-						<c:if test="${parameters[i-1][2] == '4'}"><!-- Type N/A -->
-						</c:if>
-						<c:if test="${parameters[i-1][2] == '5'}"><!-- Document -->
-						</c:if>
-						<c:if test="${parameters[i-1][2] == '6'}"><!-- Date -->
-							<select name="op${i}">							
-								<option value="=" <c:if test="${'=' == parameters[i-1][3]}">selected</c:if>>Equals to</option>							
-								<option value="<" <c:if test="${'<' == parameters[i-1][3]}">selected</c:if>>Less Than</option>						
-								<option value=">" <c:if test="${'>' == parameters[i-1][3]}">selected</c:if>>More Than</option>						
-								<option value="=<" <c:if test="${'=<' == parameters[i-1][3]}">selected</c:if>>Less Than or Equals to</option>			
-								<option value=">=" <c:if test="${'>=' == parameters[i-1][3]}">selected</c:if>>More Than or Equals to</option>	
-							</select>
-							
-							<!-- Here we will enter the provided comparison values -->
-							<input id="val${i}" name="val${i}" value="${parameters[i-1][4]}"/>
-						</c:if>
-						<c:if test="${parameters[i-1][2] == '7'}"><!-- Time -->
-							<select name="op${i}">							
-								<option value="=" <c:if test="${'=' == parameters[i-1][3]}">selected</c:if>>Equals to</option>							
-								<option value="<" <c:if test="${'<' == parameters[i-1][3]}">selected</c:if>>Less Than</option>						
-								<option value=">" <c:if test="${'>' == parameters[i-1][3]}">selected</c:if>>More Than</option>						
-								<option value="=<" <c:if test="${'=<' == parameters[i-1][3]}">selected</c:if>>Less Than or Equals to</option>			
-								<option value=">=" <c:if test="${'>=' == parameters[i-1][3]}">selected</c:if>>More Than or Equals to</option>	
-							</select>
-							
-							<!-- Here we will enter the provided comparison values -->
-							<input id="val${i}" name="val${i}" value="${parameters[i-1][4]}"/>
-						</c:if>
-						<c:if test="${parameters[i-1][2] == '8'}"><!-- Datetime -->
-							<select name="op${i}">							
-								<option value="=" <c:if test="${'=' == parameters[i-1][3]}">selected</c:if>>Equals to</option>							
-								<option value="<" <c:if test="${'<' == parameters[i-1][3]}">selected</c:if>>Less Than</option>						
-								<option value=">" <c:if test="${'>' == parameters[i-1][3]}">selected</c:if>>More Than</option>						
-								<option value="=<" <c:if test="${'=<' == parameters[i-1][3]}">selected</c:if>>Less Than or Equals to</option>			
-								<option value=">=" <c:if test="${'>=' == parameters[i-1][3]}">selected</c:if>>More Than or Equals to</option>	
-							</select>
-							
-							<!-- Here we will enter the provided comparison values -->
-							<input id="val${i}" name="val${i}" value="${parameters[i-1][4]}"/>
-						</c:if>
-						<!-- There is not type #9 -->
-						<c:if test="${parameters[i-1][2] == '10'}"><!-- Boolean -->
-							<select name="op${i}">							
-								<option value="IS">Is</option>											
-								<option value="IS NOT">Is Not</option>	
-							</select>	
-							
-							<!-- Here we will enter the provided comparison values -->
-							<input id="val${i}" name="val${i}" value="${parameters[i-1][4]}"/>
-						</c:if>
-						<c:if test="${parameters[i-1][2] == '11'}"><!-- Rule -->
-						</c:if>
-						<c:if test="${parameters[i-1][2] == '12'}"><!-- Structured Numeric -->
-						</c:if>
-						<c:if test="${parameters[i-1][2] == '13'}"><!-- Complex -->
-						</c:if>	
-						
-						<input type='button' name="remove${i}" value="Remove Criteria" align="right" onclick="deleteRow(this)"/>
-					</td>
-				</tr>
-			</c:if>
-		</c:forEach>
-		<!-- Hide addition of new criteria upon reaching the maximum of 9 -->
-		<c:if test="${true}">
-	        <tr>
-				<td colspan="2">
-					<openmrs:fieldGen type="org.openmrs.Concept" formFieldName="conceptField" val="" parameters="includeVoided=false|noBind=true|optionHeader=[blank]" />
-					<div id="conceptField_error" class="error" style="display:none"></div>
-					<input type='submit' name="add" value="Add Concept to Criteria set"/>
-				</td>
-			</tr>
-		</c:if>
+					<!-- Hide addition of new criteria upon reaching the maximum of 9 -->
+					<c:if test="${true}">
+				        <tr>
+							<td colspan="2">
+								<openmrs:fieldGen type="org.openmrs.Concept" formFieldName="conceptField" val="" parameters="includeVoided=false|noBind=true|optionHeader=[blank]" />
+								<div id="conceptField_error" class="error" style="display:none"></div>
+								<input type='submit' name="add" value="Add Concept to Criteria set"/>
+							</td>
+						</tr>
+					</c:if>
+			    </table>
+		    </td>
+		    <td>
+		    	<table id="legend">		    	
+		    	</table>
+		    </tr>
+	    </td>
     </table>
+    
    	<script type="text/javascript">
    	function deleteRow(el) {
 
@@ -187,7 +197,7 @@
     
 		
 	<input type="submit"  name="execute" value="<spring:message code="groovy.report.run"/>"/>
-	<!-- <button onclick='showMap()'>Show on Map</button>  -->
+	<!-- <button onclick='showMap()'>Show on Map</button> 
 	
 	<style>
 							.map {
@@ -202,7 +212,7 @@
 	</style>
 	
     <label id="projection" style="display:none">EPSG:3857</label>
-    <div id="map" class="map"></div>
+    <div id="map" class="map"></div> -->
     
 	<link rel="stylesheet" href="http://openlayers.org/en/v3.0.0/css/ol.css" type="text/css">
     <script src="http://openlayers.org/en/v3.0.0/build/ol.js" type="text/javascript"></script>
