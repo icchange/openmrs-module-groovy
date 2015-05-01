@@ -1,4 +1,4 @@
-/* FORM MH 717 *******************************************************
+/* FORM MH 705A-B *******************************************************
 * 
 * Author :  Others + Alejandro Ramirez-Sanabria
 * Dates  :  24/04/2015
@@ -124,6 +124,7 @@ def getPrescriptionsByLocationDateRange(location, fromDate, toDate) {
 def getAttendancesByLocationAndDate(location, fromDate, toDate) {
 	def attendancesQuery="""
 	SELECT
+		visit.date_started, 
 		visit_type.name,
 		person.gender as Gender,
 		person.birthdate as Bday,
@@ -145,9 +146,10 @@ def getAttendancesByLocationAndDate(location, fromDate, toDate) {
 		FROM
 			visit v1
 		WHERE 
-			v1.patient_id = visit.patient_id AND visit.date_started < v1.date_started)
+			v1.patient_id = visit.patient_id AND visit.date_started > v1.date_started)
 	UNION ALL
 	SELECT
+		visit.date_started,
 		visit_type.name,
 		person.gender as Gender,
 		person.birthdate as Bday,
@@ -169,11 +171,12 @@ def getAttendancesByLocationAndDate(location, fromDate, toDate) {
 		FROM
 			visit v1
 		WHERE 
-			v1.patient_id = visit.patient_id AND visit.date_started < v1.date_started)
+			v1.patient_id = visit.patient_id AND visit.date_started > v1.date_started)
 	"""
 	attendances = admin.executeSQL(attendancesQuery,false)
 	return attendances; 
 }
+
 
 /*
 * *** printTable
@@ -337,7 +340,7 @@ use(TimeCategory)
 	and concept_name.concept_id = obs.value_coded
 	and obs.concept_id = 161257
 	and concept_name.concept_id=concept.concept_id
-	and concept.class_id = 30
+	and concept.class_id != 30
 	GROUP BY
 	obs.person_id,
 	obs.value_coded,
@@ -375,7 +378,7 @@ use(TimeCategory)
 	and concept_name.concept_id = obs.value_coded
 	and obs.concept_id = 1272
 	and concept_name.concept_id=concept.concept_id
-	and concept.class_id = 30
+	and concept.class_id != 30
 	GROUP BY
 	obs.person_id,
 	obs.value_coded,
@@ -386,35 +389,8 @@ use(TimeCategory)
 	"""
 	referralsOut = admin.executeSQL(referralsOutQuery,false)
 
-	def attendancesQuery="""
-	SELECT
-	encounter.patient_id,
-	encounter.encounter_id,
-	encounter.encounter_type,
-	encounter.encounter_datetime,
-	person_name.given_name,
-	person_name.middle_name,
-	person_name.family_name,
-	encounter_type.name,
-	encounter.form_id,
-	form.name
-	FROM
-	encounter, person, location, person_name, encounter_type, form
-	WHERE
-	location.name='${location}'
-	and encounter.location_id = location.location_id
-	and encounter.encounter_type = encounter_type.encounter_type_id
-	and encounter.voided = false
-	and person.person_id = encounter.patient_id
-	and encounter.encounter_datetime >= DATE('${fromDate}')
-	and encounter.encounter_datetime <= DATE('${toDateAdjusted}') 
-	and person.birthdate ${ageComparisonOp} DATE('${birthDateRestriction}')
-	and person.person_id = person_name.person_id
-	and form.form_id=encounter.form_id
-	"""
-	attendances = admin.executeSQL(attendancesQuery,false)
-
-
+	// ARS: we removed the old code and decided to process 
+	attendances = getAttendancesByLocationAndDate(location, fromDate, toDateAdjusted);
 
 	/////////////////////////////////////////////////////////////////////////////////
 	writer = new StringWriter()
@@ -593,12 +569,21 @@ use(TimeCategory)
 			def reAttendanceCounter=0
 			for(k in attendances)      
 			{
-				if(k[3].getYear()==currentDate.getTime().getYear() && k[3].getMonth()==currentDate.getTime().getMonth() && k[3].getDate()==currentDate.getTime().getDate())
+				if(k[0].getYear()==currentDate.getTime().getYear() && k[0].getMonth()==currentDate.getTime().getMonth() && k[0].getDate()==currentDate.getTime().getDate())
 				{
+					//ARS TODO: Change accordingly
+					if (k[3] < referenceDate.getTime()) {
+						if (k[4]==1) {
+							firstAttendanceCounter++;
+						}
+						if (k[4]==0) {
+							reAttendanceCounter++;
+						}
+					}/*
 					if(firstAttendanceForms.contains(k[8]))
 					firstAttendanceCounter++
 					if(reAttendanceForms.contains(k[8]))
-					reAttendanceCounter++
+					reAttendanceCounter++*/
 				}
 			}
 			firstAttendancesRow.add(firstAttendanceCounter)
