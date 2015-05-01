@@ -2,7 +2,9 @@
 //TODO: Implement time slider (accumulative - new events add to old & as it happens - only events that happened on that day are displayed)
 //TODO: Display events at a certain radius around the click
 
-def showDebug = true
+def showDebug = false
+def globalCounter = 0
+
 /*
 def fromDate="2014-12-01"
 def toDate="2015-04-13"
@@ -13,7 +15,7 @@ def diagnosisRows =[[161759, "Malaria (Reportable)", 4, null, null]]
 */
 if (showDebug)
 {
-	print "Debug: " +diagnosisRows
+	println "Debug: " +diagnosisRows+"<br/>"+"<br/>"
 }
 
 def selectItem = ""
@@ -23,7 +25,7 @@ def finalQuery = ""
 /*print conId1+"<br/>"*/
 print '<div style="" class=".class_printable_region"  id=".class_printable_region">'
 print "Custom Reports Form <br>"
-print fromDate+" to "+toDate+" at "+location+"<br><br>";
+print fromDate+" to "+toDate+" at Location: "+location+"<br><br>";
 print minAge+" to "+maxAge+" yrs old<br><br>";
 
 //Taking care of legend colors
@@ -39,29 +41,52 @@ println "</style>"
 
 //Creating map area
 print """
-  <br/>
-  <br/>
-  <h3>People, who have opted out of the program, will not be seen on map</h3>
-  <br/>
-  <style>
-       .map {
-        height: 600px;
-        width: 100%;
-       }
-       
-       @media print
-       {
-        .noprint {display:none;}
-       }  
-  </style>
-  
-    <label id="projection" style="display:none">EPSG:3857</label>
+	</div>
+	<style>
+		.map 
+		{
+			height: 600px;
+			width: 100%;
+		}
+		@media print
+		{
+			.noprint {display:none;}
+		}  
+	</style>
+	<br/>
+	<button id="showButton" onclick="show('hideableMap')">Show Incidents on the Map</button>
+	<div style="" class=".noprint" id="hideableMap" style="display:none">
+	<button id="hideButton" onclick="hide('hideableMap')">Hide Map</button>
+	<br/>	
+	<br/>
+	<label id="announceLabel0">To display only a specific area, please enter radius in meters of search area and then click on the map below.</label>
+	<br/>
+	<label id="radiusLabel">Radius:</label>
+	<input id="radius" type="number" placeholder="100"></input><label id="announceLabel1"> meters</label>
+	<br/>
+	<br/>
+	<h3><label id="globalCounter"></label></h3>
+	<label id="projection" style="display:none">EPSG:3857</label>
     <div id="map" class="map"></div>
+	</div>
+	<div>
   """
 
 //Creating legend table
 	println """
 	<script type="text/javascript">
+		function show(target) {
+			document.getElementById(target).style.display = '';
+			document.getElementById("hideButton").style.display = '';
+			document.getElementById("showButton").style.display = 'none';
+		}
+
+		function hide(target) {
+			document.getElementById(target).style.display = 'none';
+			document.getElementById("hideButton").style.display = 'none';
+			document.getElementById("showButton").style.display = '';
+		}
+	
 		var tt = document.getElementById('legend');
 		tt.border = '1px;';
 		var tr0 = tt.insertRow(0);
@@ -79,15 +104,13 @@ print """
 
 		format = 'image/png';
 		var map = new ol.Map({
-			controls: ol.control.defaults({
-				attributionOptions: /** @type {olx.control.AttributionOptions} */ ({
-					collapsible: false
-				})
-			}).extend([mousePositionControl]),
+			controls: [],
 			layers: 
 			[
 				new ol.layer.Tile({
-					source: new ol.source.OSM()
+					source: new ol.source.OSM(),
+					minResolution: 0.1,
+					maxResolution: 50
 				})
 			],
 			target: 'map',
@@ -98,6 +121,9 @@ print """
 				minZoom: 16
 			}),
 		});
+		//Adding the Zoom Slider for ease of use.
+		map.addControl(mousePositionControl);
+		map.addControl(new ol.control.ZoomSlider());
 			 
 		var image = new ol.style.Circle({
 			radius: 5,
@@ -106,9 +132,11 @@ print """
 			stroke: new ol.style.Stroke({color: 'red', width: 0})
 		});
 	</script>
+	<br/><br/>
 	"""
 
 //////////////////////////////////////////////////////////////////////////////
+//Main Script body
 import org.codehaus.groovy.runtime.TimeCategory
 import groovy.xml.MarkupBuilder
 use(TimeCategory)
@@ -117,8 +145,11 @@ use(TimeCategory)
 	referenceDate=referenceDate-5.years
 	def minDate = new Date().parse("yyyy-M-d", fromDate) - minAge.toInteger().years
 	def maxDate = new Date().parse("yyyy-M-d", fromDate) - maxAge.toInteger().years
-
-	//print "Birth dates between: " + minDate.toString() + " - " + maxDate.toString()
+	
+	if (showDebug)
+	{
+		print "Debug: birth dates are between: " + minDate.toString() + " - " + maxDate.toString()
+	}
 
 	def birthDateRestriction = referenceDate.format('yyyy-M-d')
 	def toDateTemp = new Date().parse("yyyy-M-d", toDate)
@@ -151,6 +182,7 @@ use(TimeCategory)
 		def op = "="
 		def val = conId
 		def group = "1284"
+		
 		
 		if (diagnosisRows[i][3] != null && diagnosisRows[i][3] != "null" && diagnosisRows[i][4] != null && diagnosisRows[i][4] != "null")
 		{
@@ -208,11 +240,12 @@ use(TimeCategory)
 				type = "value_coded" //placeholder
 				if (showDebug)
 				{
-					print "Debug Warning: typeCode fell through the cracks"
+					print "Debug Warning: unhandled typeCode"
 				}
 				break
 		}
 		
+		//This query retrieves all required data for a particular diagnosis row
 		def diagnosisQuery="""
 		SELECT
 		obs.person_id,
@@ -250,9 +283,19 @@ use(TimeCategory)
 		ORDER BY
 		encounter.encounter_id ASC
 		"""
+		if (showDebug)
+		{
+			println "Debug: "+diagnosisQuery+"<br/>"+"<br/>"
+		}
 		
 		//Query execution
 		diagnosis = admin.executeSQL(diagnosisQuery,false)
+		
+		
+		if (showDebug)
+		{
+			println "Debug: "+diagnosis+"<br/>"+"<br/>"
+		}
 		
 		/*Inserts padding at the end of the table. Not used at the moment.
 		if(i==diagnosisRows.size()-1)
@@ -267,7 +310,7 @@ use(TimeCategory)
 			tableData.add(row)
 		}*/
 		
-		// diagnosis
+		//Filling in the report table with the data for a particular diagnosis
 		def row=[]
 		def rowTotal=0
 		row.add(name)    
@@ -315,7 +358,7 @@ use(TimeCategory)
 			var styleFunction${i} = function(feature, resolution) {
 				return style${i}[feature.getGeometry().getType()];
 			};
-			
+						
 			var diseaseVectorSource${i} = new ol.source.GeoJSON(
 			/** @type {olx.source.GeoJSONOptions} */ ({
 				format: new ol.format.GeoJSON({
@@ -336,13 +379,15 @@ use(TimeCategory)
 					{
 						lat = a[8]
 						lon = a[9]
-						if (lat!=null)
+						if (lat!=null && lon!=null)
 						{
 							print '{"type": "Feature","geometry": {"type": "Point","coordinates": [' 
 							print "${lat}" 
 							print ', ' 
 							print "${lon}"
 							println ']}},'
+						}else{
+							globalCounter += 1
 						}
 					}
 
@@ -360,207 +405,8 @@ use(TimeCategory)
 		</script>
 		"""
 	}
-  
-	/////////////////////////////////////////////////////////////////
-	/*An outdated diagnosis query
-	def diagnosisQuery="""
-	SELECT
-	obs.person_id,
-	obs.encounter_id,
-	obs.value_coded,
-	encounter.encounter_datetime,
-	person_name.given_name,
-	person_name.middle_name,
-	person_name.family_name,
-	concept_name.name,
-	encounter.latitude,
-	encounter.longitude
-	FROM
-	encounter, person, obs, person_name, concept_name, location
-	WHERE
-	location.name='${location}'
-	and encounter.location_id = location.location_id
-	and encounter.voided = false
-	and person.person_id = encounter.patient_id
-	and encounter.encounter_datetime >= DATE('${fromDate}')
-	and encounter.encounter_datetime <= DATE('${toDateAdjusted}') 
-	and obs.voided = false
-	and obs.encounter_id = encounter.encounter_id
-	and person.person_id = person_name.person_id   
-	-- and person.birthdate =< DATE('${minDate}') and person.birthdate => DATE('${maxDate}')
-	and concept_name.concept_id = obs.value_coded
-	and obs.concept_id = 1284
-	and obs.value_coded = ${conId}
-	and concept_name.name LIKE '%(Reportable)%'
-	GROUP BY
-	obs.obs_id,
-	obs.person_id,
-	obs.value_coded,
-	encounter.encounter_datetime
-	ORDER BY
-	encounter.encounter_id ASC
-	"""
-	diagnosis = admin.executeSQL(diagnosisQuery,false)
-	*/
-
-
-
-
-	/////////////////////////////////////////////////////////////////////////////////
-
-
-
-	/**
-	[161749,"Diarrhoea"],
-	[161775,"Tuberculosis"],
-	[161753,"Dysentery"],
-	[161745,"Cholera"],
-	[161763,"Meningococcal Meningitis"],
-	[161774,"Tetanus"],
-	[161770,"Poliomyelitis (AFP)"],
-	[161744,"Chicken Pox"],
-	[161762,"Measles"],
-	[161758,"Infectious Hepatitis"],
-	[162007,"Clinical Malaria"],
-	[161746,"Confirmed Malaria"],
-	[161760,"Malaria in Pregnancy"],
-	[161776,"Typhoid fever"],
-	[161773,"Sexually transmitted infections"],
-	[161777,"Urinary Tract Infections"],
-	[161740,"Bilharzia"],
-	[161761,"Malnutrition"],
-	[161739,"Aneamia"],
-	[161756,"Eye infections"],
-	[161754,"Ear infections"],
-	[161766,"Other dis. of repiratory system"],
-	[161768,"Pneumonia"],
-	[161723,"Abortion"],
-	[161750,"Dis. of puerperium and childbirth"],
-	[161757,"Hypertension"],
-	[161764,"Mental disorders"],
-	[161747,"Dental disorders"],
-	[161751,"Dis. of the skin (incl. wounds)"],
-	[161771,"Rheumatism, Joint Pains, etc."],
-	[161769,"Poisoning"],
-	[161724,"Accidents - fractures, injuries, etc."],
-	[161772,"Sexual assault"],
-	[161743,"Burns"],
-	[161741,"Bites - animals, snakes, etc"],
-	[161748,"Diabetes"],
-	[161755,"Epilepsy"],
-	[161752,"Dracunculosis"],
-	[161779,"Yellow Fever"],
-	[161778,"Viral Haemorrhagic Fever"],
-	[161765,"New AIDS Cases"],
-	[161767,"Plague"],
-	[161742,"Brucellosis"],
-	[161780,"ALL OTHER DISEASES"],
-	*/
-  
-
-  
-
-	/** total diagnosis
-	def totalNewCasesRow=["TOTAL NEW CASES"]
-	def totalNewCasesRowTotal=0    
-	for(currentDate = new Date().parse("yyyy-M-d", fromDate); currentDate<=endingDate; currentDate=currentDate+1.days)
-	{
-	def counter=0
-	for(k in diagnosis)
-	if(k[3].getYear()==currentDate.getYear() && k[3].getMonth()==currentDate.getMonth() && k[3].getDate()==currentDate.getDate())
-	counter++
-	totalNewCasesRow.add(counter)
-	totalNewCasesRowTotal=totalNewCasesRowTotal+counter
-	}
-	totalNewCasesRow.add(totalNewCasesRowTotal)
-	tableData.add(totalNewCasesRow);**/
-
-
-	/** first attendances
-	def firstAttendancesRow=[]
-	def firstAttendancesRowTotal=0
-	firstAttendancesRow.add("NO. OF FIRST ATTENDANCES")
-	def reAttendancesRow=[]
-	def reAttendancesRowTotal=0
-	reAttendancesRow.add("RE-ATTENDANCES")
-	def formTypes=[
-	4:"Adult Intake Form",
-	5:"Pediatric Intake Form",
-	7:"Maternity Intake Form",
-	8:"Adult Follow Up Form",
-	11:"Vitals Form",
-	12:"Pediatric Followup Form",
-	13:"Maternity Followup Form",
-	15:"Lab Result Form",
-	16:"Drug Order",
-	17:"Nutrition Consult",
-	18:"Lab Order Form",
-	19:"Labour and Delivery Form 2 Summary of Labour",
-	20:"Pregnancy Listing",
-	21:"HIV Form",
-	22:"Labour and Delivery Form 3 Newborn and HIV status",
-	23:"Labour and Delivery Form 1 Partograph and Vitals",
-	26:"Newborn Form"
-	]
-	def firstAttendanceForms=[4,5,7,26]
-	def reAttendanceForms=[8,11,12,13,17,19,20,21,22,23]
-	def miscForms=[15,16,18]
-	for(currentDate = new Date().parse("yyyy-M-d", fromDate); currentDate<=endingDate; currentDate=currentDate+1.days)
-	{
-	def firstAttendanceCounter=0
-	def reAttendanceCounter=0
-	for(k in attendances)      
-	{
-	if(k[3].getYear()==currentDate.getYear() && k[3].getMonth()==currentDate.getMonth() && k[3].getDate()==currentDate.getDate())
-	{
-	if(firstAttendanceForms.contains(k[8]))
-	 firstAttendanceCounter++
-	if(reAttendanceForms.contains(k[8]))
-	 reAttendanceCounter++
-	}
-	}
-	firstAttendancesRow.add(firstAttendanceCounter)
-	firstAttendancesRowTotal = firstAttendancesRowTotal + firstAttendanceCounter
-	reAttendancesRow.add(reAttendanceCounter)
-	reAttendancesRowTotal = reAttendancesRowTotal + reAttendanceCounter
-	}
-	firstAttendancesRow.add(firstAttendancesRowTotal)
-	tableData.add(firstAttendancesRow);
-	reAttendancesRow.add(reAttendancesRowTotal)
-	tableData.add(reAttendancesRow);*/
-
-	/** referrals in
-	def referralsInRow=[]
-	def referralsInRowTotal=0
-	referralsInRow.add("REFERRALS IN")
-	for(currentDate = new Date().parse("yyyy-M-d", fromDate); currentDate<=endingDate; currentDate=currentDate+1.days)
-	{
-	def counter=0
-	for(k in referralsIn)
-	if(k[3].getYear()==currentDate.getYear() && k[3].getMonth()==currentDate.getMonth() && k[3].getDate()==currentDate.getDate())
-	counter++
-	referralsInRow.add(counter)
-	referralsInRowTotal=referralsInRowTotal+counter
-	}
-	referralsInRow.add(referralsInRowTotal)
-	tableData.add(referralsInRow);*/
-
-	/** referrals out
-	def referralsOutRow=[]
-	def referralsOutRowTotal=0
-	referralsOutRow.add("REFERRALS OUT")
-	for(currentDate = new Date().parse("yyyy-M-d", fromDate); currentDate<=endingDate; currentDate=currentDate+1.days)
-	{
-	def counter=0
-	for(k in referralsOut)
-	if(k[3].getYear()==currentDate.getYear() && k[3].getMonth()==currentDate.getMonth() && k[3].getDate()==currentDate.getDate())
-	counter++
-	referralsOutRow.add(counter)
-	referralsOutRowTotal=referralsOutRowTotal+counter
-	}
-	referralsOutRow.add(referralsOutRowTotal)
-	tableData.add(referralsOutRow);*/
-
+	
+	//this code actually builds the report table 
 	b.table(border: 1)
 	{  
 		for(tableRow in tableData)
@@ -578,234 +424,349 @@ use(TimeCategory)
   println writer
   println '</div>'
   
-
-
+  //If no patients or one patient opted out change the message accordingly
+  def globalCounterMessage = ""
+  if (globalCounter == 0){
+	  globalCounterMessage = ""
+  }else if(globalCounter == 1){
+	  globalCounterMessage = "1 Patient who has opted out of the program, will not be seen on map"
+  }else{
+	  globalCounterMessage = "${globalCounter} Patients who have opted out of the program, will not be seen on map"
+  }
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
- 
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
- 
-  
-  
-  
-  
-  
-  
-  
-  
-  
+  //This section is responsible for and allied hospitals
   println """<script type="text/javascript">
 	///////////////////////////////////////
+	
+	//Adding opt-out patient count to the page
+	globalCounter.innerHTML = '${globalCounterMessage}';
+	
 	//Disease style & its function used to be here
-  
+	
+	//Setting up for radius search
+	//Getting the radius 
+	var rad = document.getElementById("radius").value;
+	if (rad == ""){
+		rad = 100;
+		//document.getElementById("radius").value = rad;
+		//console.log("3: " + rad);
+	}
+	//console.log(rad);
+	
+	//Setting up circle look and fill
+	var blueFill = new ol.style.Fill({
+		color: 'rgba(0,0,255,0.1)'
+	});
+	
+	//Setting up circle style
+	var iconStyle = new ol.style.Style({
+		image: new ol.style.Circle({
+			radius: rad / map.getView().getResolution(),
+			fill: blueFill,
+			stroke: new ol.style.Stroke({color: 'rgba(0,0,255,0.3)', width: 0})
+		}),
+		blueFill
+	});
+	
+	//Resize items on zoom level change
+	map.getView().on('change:resolution', function() {
+		//Re-acquiring radius and verifying it's value
+		var rad = document.getElementById("radius").value;
+		if (rad == ""){
+			rad = 100;
+		}
+		//Updating style of the displayed circle
+		iconStyle = new ol.style.Style({
+			image: new ol.style.Circle({
+				radius: rad / map.getView().getResolution(),
+				fill: blueFill,
+				stroke: new ol.style.Stroke({color: 'rgba(0,0,255,0.3)', width: 0})
+			}),
+			blueFill
+		});
+		//Updating the map layer of the circle - Increasing/Decreasing with zoom
+		map.removeLayer(vectorLayer);
+		iconFeature.setStyle(iconStyle);
+		vectorSource = new ol.source.Vector({
+			features: [iconFeature]
+		});
+		vectorLayer = new ol.layer.Vector({
+			source: vectorSource
+		});
+		map.addLayer(vectorLayer);
+	});
+	
+	var iconFeature = new ol.Feature({
+		geometry: new ol.geom.Point([0,0]),
+		name: 'Event Horizon'
+	});
+
+	iconFeature.setStyle(iconStyle);
+
+	vectorSource = new ol.source.Vector({
+		features: [iconFeature]
+	});
+
+	vectorLayer = new ol.layer.Vector({
+		source: vectorSource
+	});
+
+	map.addLayer(vectorLayer);
+	
+	map.on('singleclick', function(evt) {
+		var coordinate = evt.coordinate;
+		
+		//Printing the coordinates to console
+		console.log(coordinate);
+		//console.log(map.getView().getResolution());
+		rad = document.getElementById("radius").value;
+		if (rad == ""){
+			rad = 100;
+			//document.getElementById("radius").value = rad;
+			//console.log("3: " + rad);
+		}
+		//console.log(rad);
+		//radius = rad / map.getView().getResolution();
+		//console.log(radius);
+		//Updating style of the displayed circle
+		iconStyle = new ol.style.Style({
+			image: new ol.style.Circle({
+				radius: rad / map.getView().getResolution(),
+				fill: blueFill,
+				stroke: new ol.style.Stroke({color: 'rgba(0,0,255,0.3)', width: 0})
+			}),
+			blueFill
+		});
+		
+		iconFeature = new ol.Feature({
+			geometry: new ol.geom.Point(coordinate),
+			name: 'Event Horizon'
+		});
+		map.removeLayer(vectorLayer);
+		
+		iconFeature.setStyle(iconStyle);
+
+		vectorSource = new ol.source.Vector({
+			features: [iconFeature]
+		});
+
+		vectorLayer = new ol.layer.Vector({
+			source: vectorSource
+		});
+
+		map.addLayer(vectorLayer);
+	});
          
-   var alliedStyles = {   'Point': [new ol.style.Style({
-          image: new ol.style.Icon(/** @type {olx.style.IconOptions} */ ({
-                                        anchor: [0.5, 10],
-                                        anchorXUnits: 'fraction',
-                                        anchorYUnits: 'pixels',
-                                        opacity: 1.00,
-          scale: 1.50,
-          src: '../../images/openmrs_logo_tiny.png'                                        
-                                      }))
-           })]
-         }  
-         var alliedStyleFunction = function(feature, resolution) {
-           return alliedStyles[feature.getGeometry().getType()];
-         };
-         
-   var alliedVectorSource = new ol.source.GeoJSON(
-          /** @type {olx.source.GeoJSONOptions} */ ({
-          format: new ol.format.GeoJSON({
-           defaultProjection: 'EPSG:4326'
-          }),
-          projection: 'EPSG:3857',
-          object: 
-          {
-  "type": "FeatureCollection",
-  "generator": "overpass-turbo",
-  "copyright": "The data included in this document is from www.openstreetmap.org. The data is made available under ODbL.",
-  "timestamp": "2015-01-27T22:54:02Z",
-  "features": [
-    {
-      "type": "Feature",
-      "id": "node/2016217939",
-      "properties": {
-        "@id": "node/2016217939",
-        "amenity": "clinic",
-        "health_facility:referals": "AMREF",
-        "health_facility:type": "health_center",
-        "medical_service:general_medical_services": "yes",
-        "medical_service:outpatient": "yes",
-        "medical_service:pregnancy_test": "yes",
-        "name": "Vostrum Clinic,Kibera Branch",
-        "opening_hours": "24/7",
-        "operational_status": "operational",
-        "operator:type": "N/A"
-      },
-      "geometry": {
-        "type": "Point",
-        "coordinates": [
-          36.781119,
-          -1.3077519
-        ]
-      }
-    },
-  {
-      "type": "Feature",
-      "id": "node/701794660",
-      "properties": {
-        "@id": "node/701794660",
-        "amenity": "hospital",
-        "health_facility:bed": "14",
-        "health_facility:exam_room": "yes",
-        "health_facility:patients_per_day": "many",
-        "health_facility:referals": "AMREF,Mbagathi,Kenyatta National Hospital",
-        "health_facility:type": "health_center",
-        "medical_service:antenatal_care": "yes",
-        "medical_service:antiretroviral_therapy": "yes",
-        "medical_service:basic_emergency_obsteric_care": "yes",
-        "medical_service:circumcision": "yes",
-        "medical_service:condom_distribution": "yes",
-        "medical_service:disease_support_groups": "Blood Sugar",
-        "medical_service:family_planning": "yes",
-        "medical_service:gender_based_violence_services": "yes",
-        "medical_service:general_medical_services": "yes",
-        "medical_service:growth_and_nutritional_support": "yes",
-        "medical_service:home_based_care": "yes",
-        "medical_service:immunizations": "yes",
-        "medical_service:inpatient": "yes",
-        "medical_service:integrated_management_of_childhood_illness": "yes",
-        "medical_service:malaria": "yes",
-        "medical_service:minor_surgery": "yes",
-        "medical_service:outpatient": "yes",
-        "medical_service:pmtct": "yes",
-        "medical_service:pregnancy_test": "yes",
-        "medical_service:psychosocial_support_counselling": "yes",
-        "medical_service:sexually_transmitted_infections_management": "yes",
-        "medical_service:tb_diagnosis": "yes",
-        "medical_service:tb_labs": "yes",
-        "medical_service:tb_treatment": "yes",
-        "medical_service:vct_hiv_counselling_test": "yes",
-        "medical_service:youth_friendly_services": "yes",
-        "medical_staff:clinical_officer": "2",
-        "medical_staff:community_pharmacist": "2",
-        "medical_staff:counsellor": "2",
-        "medical_staff:general_practitioner": "1",
-        "medical_staff:lab_tech": "2",
-        "medical_staff:medical_officer": "1",
-        "medical_staff:midwife": "2",
-        "medical_staff:nurse": "2",
-        "medical_staff:pharm_tech": "2",
-        "name": "Ushirika medical centre",
-        "opening_hours": "24/7",
-        "operational_status": "operational",
-        "operational_status:electricity": "always",
-        "operator:type": "ngo_cbo"
-      },
-      "geometry": {
-        "type": "Point",
-        "coordinates": [
-          36.7727571,
-          -1.3077798
-        ]
-      }
-    },
-    {
-      "type": "Feature",
-      "id": "node/671166105",
-      "properties": {
-        "@id": "node/671166105",
-        "amenity": "hospital",
-        "health_facility:bed": "5",
-        "health_facility:cot": "14",
-        "health_facility:exam_room": "yes",
-        "health_facility:patients_per_day": "100",
-        "health_facility:referals": "IDH,KNH",
-        "health_facility:type": "health_center",
-        "medical_service:antenatal_care": "yes",
-        "medical_service:antiretroviral_therapy": "yes",
-        "medical_service:circumcision": "yes",
-        "medical_service:comprehensive_essential_obsteric_care": "yes",
-        "medical_service:condom_distribution": "yes",
-        "medical_service:family_planning": "yes",
-        "medical_service:gender_based_violence_services": "yes",
-        "medical_service:general_medical_services": "yes",
-        "medical_service:growth_and_nutritional_support": "yes",
-        "medical_service:health_insurance": "no",
-        "medical_service:home_based_care": "yes",
-        "medical_service:immunizations": "yes",
-        "medical_service:inpatient": "yes",
-        "medical_service:integrated_management_of_childhood_illness": "yes",
-        "medical_service:malaria": "yes",
-        "medical_service:minor_surgery": "yes",
-        "medical_service:outpatient": "yes",
-        "medical_service:palliative_care": "yes",
-        "medical_service:pmtct": "yes",
-        "medical_service:pregnancy_test": "yes",
-        "medical_service:prevention": "HIV",
-        "medical_service:psychosocial_support_counselling": "yes",
-        "medical_service:sexually_transmitted_infections_management": "yes",
-        "medical_service:tb_diagnosis": "yes",
-        "medical_service:tb_labs": "yes",
-        "medical_service:tb_treatment": "yes",
-        "medical_service:vct_hiv_counselling_test": "yes",
-        "medical_service:youth_friendly_services": "yes",
-        "medical_staff:clinical_officer": "5",
-        "medical_staff:counsellor": "2",
-        "medical_staff:general_practitioner": "1",
-        "medical_staff:lab_tech": "2",
-        "medical_staff:medical_officer": "5",
-        "medical_staff:midwife": "7",
-        "medical_staff:nurse": "6",
-        "medical_staff:pharmacist": "4",
-        "name": "Amref-Kibera",
-        "opening_hours": "Mo-Fr 08:00-16:30",
-        "operational_status": "operational",
-        "operational_status:electricity": "always",
-        "operator:type": "ngo_international"
-      },
-      "geometry": {
-        "type": "Point",
-        "coordinates": [
-          36.7956417,
-          -1.311196
-        ]
-      }
-    }
-]
-}
-})
-);
-  
-   var alliedVectorLayer = new ol.layer.Vector({
-            source: alliedVectorSource,
-            style: alliedStyleFunction
-          });
-          
-          map.addLayer(alliedVectorLayer);
-  """
-  
-println "</script>"
+	var alliedStyles = {};
+	
+	var alliedStyleFunction = function(feature, resolution) {
+		var text = resolution < 18 ? feature.get('name') : '';
+		if (!alliedStyles[text]) {
+			alliedStyles[text] =
+				[new ol.style.Style
+				({
+					image: new ol.style.Icon(/** @type {olx.style.IconOptions} */
+					({
+						anchor: [0.5, 10],
+						anchorXUnits: 'fraction',
+						anchorYUnits: 'pixels',
+						opacity: 1.00,
+						scale: 2.00,
+						src: '../../images/openmrs_logo_tiny.png'
+					})),
+					text : new ol.style.Text({
+						font : '14px Calibri,sans-serif,bold',
+						text : text,
+						fill : new ol.style.Fill({
+							color : '#000'
+						}),
+						offsetY : -23,//30
+						stroke : new ol.style.Stroke({
+							color : '#fff',
+							width : 4
+						})
+					})
+				})];
+		}
+		return alliedStyles[text];
+	};
+
+	var alliedVectorSource = new ol.source.GeoJSON(
+		/** @type {olx.source.GeoJSONOptions} */ ({
+		format: new ol.format.GeoJSON({
+		defaultProjection: 'EPSG:4326'
+		}),
+		projection: 'EPSG:3857',
+		object: 
+		{
+		"type": "FeatureCollection",
+		"generator": "overpass-turbo",
+		"copyright": "The data included in this document is from www.openstreetmap.org. The data is made available under ODbL.",
+		"timestamp": "2015-01-27T22:54:02Z",
+		"features": [
+		{
+		"type": "Feature",
+		"id": "node/2016217939",
+		"properties": {
+		"@id": "node/2016217939",
+		"amenity": "clinic",
+		"health_facility:referals": "AMREF",
+		"health_facility:type": "health_center",
+		"medical_service:general_medical_services": "yes",
+		"medical_service:outpatient": "yes",
+		"medical_service:pregnancy_test": "yes",
+		"name": "Vostrum",
+		"opening_hours": "24/7",
+		"operational_status": "operational",
+		"operator:type": "N/A"
+		},
+		"geometry": {
+		"type": "Point",
+		"coordinates": [
+		36.781119,
+		-1.3077519
+		]
+		}
+		},
+		{
+		"type": "Feature",
+		"id": "node/701794660",
+		"properties": {
+		"@id": "node/701794660",
+		"amenity": "hospital",
+		"health_facility:bed": "14",
+		"health_facility:exam_room": "yes",
+		"health_facility:patients_per_day": "many",
+		"health_facility:referals": "AMREF,Mbagathi,Kenyatta National Hospital",
+		"health_facility:type": "health_center",
+		"medical_service:antenatal_care": "yes",
+		"medical_service:antiretroviral_therapy": "yes",
+		"medical_service:basic_emergency_obsteric_care": "yes",
+		"medical_service:circumcision": "yes",
+		"medical_service:condom_distribution": "yes",
+		"medical_service:disease_support_groups": "Blood Sugar",
+		"medical_service:family_planning": "yes",
+		"medical_service:gender_based_violence_services": "yes",
+		"medical_service:general_medical_services": "yes",
+		"medical_service:growth_and_nutritional_support": "yes",
+		"medical_service:home_based_care": "yes",
+		"medical_service:immunizations": "yes",
+		"medical_service:inpatient": "yes",
+		"medical_service:integrated_management_of_childhood_illness": "yes",
+		"medical_service:malaria": "yes",
+		"medical_service:minor_surgery": "yes",
+		"medical_service:outpatient": "yes",
+		"medical_service:pmtct": "yes",
+		"medical_service:pregnancy_test": "yes",
+		"medical_service:psychosocial_support_counselling": "yes",
+		"medical_service:sexually_transmitted_infections_management": "yes",
+		"medical_service:tb_diagnosis": "yes",
+		"medical_service:tb_labs": "yes",
+		"medical_service:tb_treatment": "yes",
+		"medical_service:vct_hiv_counselling_test": "yes",
+		"medical_service:youth_friendly_services": "yes",
+		"medical_staff:clinical_officer": "2",
+		"medical_staff:community_pharmacist": "2",
+		"medical_staff:counsellor": "2",
+		"medical_staff:general_practitioner": "1",
+		"medical_staff:lab_tech": "2",
+		"medical_staff:medical_officer": "1",
+		"medical_staff:midwife": "2",
+		"medical_staff:nurse": "2",
+		"medical_staff:pharm_tech": "2",
+		"name": "Ushirika",
+		"opening_hours": "24/7",
+		"operational_status": "operational",
+		"operational_status:electricity": "always",
+		"operator:type": "ngo_cbo"
+		},
+		"geometry": {
+			"type": "Point",
+			"coordinates": [
+				36.7727571,
+				-1.3077798
+			]
+		}
+		},
+		{
+			"type": "Feature",
+			"id": "node/671166105",
+			"properties": {
+				"@id": "node/671166105",
+				"amenity": "hospital",
+				"health_facility:bed": "5",
+				"health_facility:cot": "14",
+				"health_facility:exam_room": "yes",
+				"health_facility:patients_per_day": "100",
+				"health_facility:referals": "IDH,KNH",
+				"health_facility:type": "health_center",
+				"medical_service:antenatal_care": "yes",
+				"medical_service:antiretroviral_therapy": "yes",
+				"medical_service:circumcision": "yes",
+				"medical_service:comprehensive_essential_obsteric_care": "yes",
+				"medical_service:condom_distribution": "yes",
+				"medical_service:family_planning": "yes",
+				"medical_service:gender_based_violence_services": "yes",
+				"medical_service:general_medical_services": "yes",
+				"medical_service:growth_and_nutritional_support": "yes",
+				"medical_service:health_insurance": "no",
+				"medical_service:home_based_care": "yes",
+				"medical_service:immunizations": "yes",
+				"medical_service:inpatient": "yes",
+				"medical_service:integrated_management_of_childhood_illness": "yes",
+				"medical_service:malaria": "yes",
+				"medical_service:minor_surgery": "yes",
+				"medical_service:outpatient": "yes",
+				"medical_service:palliative_care": "yes",
+				"medical_service:pmtct": "yes",
+				"medical_service:pregnancy_test": "yes",
+				"medical_service:prevention": "HIV",
+				"medical_service:psychosocial_support_counselling": "yes",
+				"medical_service:sexually_transmitted_infections_management": "yes",
+				"medical_service:tb_diagnosis": "yes",
+				"medical_service:tb_labs": "yes",
+				"medical_service:tb_treatment": "yes",
+				"medical_service:vct_hiv_counselling_test": "yes",
+				"medical_service:youth_friendly_services": "yes",
+				"medical_staff:clinical_officer": "5",
+				"medical_staff:counsellor": "2",
+				"medical_staff:general_practitioner": "1",
+				"medical_staff:lab_tech": "2",
+				"medical_staff:medical_officer": "5",
+				"medical_staff:midwife": "7",
+				"medical_staff:nurse": "6",
+				"medical_staff:pharmacist": "4",
+				"name": "AMREF",
+				"opening_hours": "Mo-Fr 08:00-16:30",
+				"operational_status": "operational",
+				"operational_status:electricity": "always",
+				"operator:type": "ngo_international"
+			},
+			"geometry": {
+				"type": "Point",
+				"coordinates": [
+					36.7956417,
+					-1.311196
+				]
+			}
+		}
+		]
+		}
+		})
+	);
+
+	var alliedVectorLayer = new ol.layer.Vector({
+	source: alliedVectorSource,
+	style: alliedStyleFunction
+	});
+
+	map.addLayer(alliedVectorLayer);
+	
+	//Hides the map so that it starts hidden
+	document.getElementById('hideableMap').style.display = 'none';
+	"""
+
+	println "</script>"
 
 }
 

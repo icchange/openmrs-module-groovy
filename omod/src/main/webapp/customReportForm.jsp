@@ -141,12 +141,16 @@
 									<!-- There is not type #9 -->
 									<c:if test="${parameters[i-1][2] == '10'}"><!-- Boolean -->
 										<select name="op${i}">							
-											<option value="IS">Is</option>											
-											<option value="IS NOT">Is Not</option>	
+											<option value="=">Is</option>											
+											<option value="!=">Is Not</option>	
 										</select>	
 										
 										<!-- Here we will enter the provided comparison values -->
-										<input id="val${i}" name="val${i}" value="${parameters[i-1][4]}"/>
+										<!-- Boolean type should only have 2 values to compare to -->
+										<select name="val${i}">							
+											<option value="1">TRUE</option>											
+											<option value="0">FALSE</option>	
+										</select>	
 									</c:if>
 									<c:if test="${parameters[i-1][2] == '11'}"><!-- Rule -->
 									</c:if>

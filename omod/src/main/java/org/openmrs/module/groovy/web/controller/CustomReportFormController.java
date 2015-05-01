@@ -38,6 +38,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.openmrs.module.groovy.web.dwr.DWRGroovyService;
 import org.openmrs.Concept;
 import org.openmrs.util.OpenmrsUtil;
+import org.openmrs.util.OpenmrsConstants;
 
 /**
  * This controller backs and saves the Groovy module settings
@@ -560,17 +561,18 @@ public class CustomReportFormController {
 
     	log.info("Verifying appropriate rights and location");
     	User currentUser = Context.getAuthenticatedUser();
-    	String location=null;
-    	List<GroovyUser> groovyUsers = GroovyUtil.getService().getAllUsers();
+    	String location = Context.getLocationService().getLocation(Integer.parseInt(currentUser.getUserProperties().get(OpenmrsConstants.USER_PROPERTY_DEFAULT_LOCATION))).getDisplayString();//tempUser.getLocation().getName();
+    	
+    	/*List<GroovyUser> groovyUsers = GroovyUtil.getService().getAllUsers();
 		for (int i=0; i<groovyUsers.size(); i++)
     	{
     		GroovyUser tempUser=groovyUsers.get(i);
     		if(tempUser.getUser().getId()==currentUser.getId())
     		{
-    			location=tempUser.getLocation().getName();
+    			
     			break;
     		}
-    	}
+    	}*/
 		
     	log.info("Building groovy script");
     	String scriptString="def fromDate='"+fromDate+"'\n"+

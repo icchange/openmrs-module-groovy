@@ -37,6 +37,9 @@ import org.springframework.web.bind.annotation.RequestParam;
 
 import org.openmrs.module.groovy.web.dwr.DWRGroovyService;
 
+import org.openmrs.util.OpenmrsUtil;
+import org.openmrs.util.OpenmrsConstants;
+
 /**
  * This controller backs and saves the Groovy module settings
  */
@@ -82,9 +85,9 @@ public class GroovyReportFormController {
     	log.info("run groovy report");
     	
     	
-    	User currentUser = Context.getAuthenticatedUser();
-    	String location=null;
-    	List<GroovyUser> groovyUsers = GroovyUtil.getService().getAllUsers();
+    	//User currentUser = Context.getAuthenticatedUser();
+    	//String location=null;
+    	/*List<GroovyUser> groovyUsers = GroovyUtil.getService().getAllUsers();
 		for (int i=0; i<groovyUsers.size(); i++)
     	{
     		GroovyUser tempUser=groovyUsers.get(i);
@@ -93,7 +96,10 @@ public class GroovyReportFormController {
     			location=tempUser.getLocation().getName();
     			break;
     		}
-    	}
+    	}*/
+    	User currentUser = Context.getAuthenticatedUser();
+    	String location = Context.getLocationService().getLocation(Integer.parseInt(currentUser.getUserProperties().get(OpenmrsConstants.USER_PROPERTY_DEFAULT_LOCATION))).getDisplayString();//tempUser.getLocation().getName();
+    	
     	String scriptString="" + "def userId='"+ String.valueOf(currentUser.getId())+"'\n"+
     		"def fromDate='"+fromDate+"'\n"+
 			"def toDate='"+toDate+"'\n"+
