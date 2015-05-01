@@ -5,18 +5,10 @@
 * 
 * Description:
 * This groovyscript creates a HTML report based on the MOH 717 form. 
-* Original code taken from 705A/B
-*/
-
-
-/*** TODO ***
-	1) Fix the query for prescriptions -- the location is not accurate
-	2) When available, expand Section A based on visit types. 
-	3) When available, visits would also have extra info for inpatients. 
+* Version: 1.0
 */
 
 //ARS: Helper functions -- these functions should be located in a common library.  
-
 
 /**** getEncounterNumberbyLocationAndDateRange 
 	* Author: ARS
@@ -34,7 +26,8 @@ def getEncounterNumberbyLocationAndDateRange(location, fromDate, toDate) {
 		encounter.location_id = location.location_id AND
 		location.name = '${location}' AND
 		encounter.date_created >= DATE('${fromDate}') AND
-		encounter.date_created <= DATE('${toDate}') 
+		encounter.date_created <= DATE('${toDate}') AND
+		encounter.voided = false 
 	"""
 	numEncountersList = admin.executeSQL(numEncountersQuery,false)	
 	return numEncountersList[0][0]
@@ -51,21 +44,19 @@ def getMaternityOutcomeByLocationAndDateRange(location, fromDate, toDate) {
 	def maternityQuery = """
 	SELECT obs.value_coded
 	FROM 
-		visit, encounter, obs, location
+		/*visit, encounter,*/ obs, location
 	WHERE
 		location.name = '${location}' and	
-		location.location_id = visit.location_id and
-		visit.visit_id = encounter.visit_id and
-		encounter.encounter_id = obs.encounter_id and
+		location.location_id = obs.location_id and
+		/*visit.visit_id = encounter.visit_id and
+		encounter.encounter_id = obs.encounter_id and*/
 		obs.date_created >= DATE('${fromDate}') and
 		obs.date_created <= DATE('${toDate}') and
 		obs.voided = false and	
-		encounter.voided = false and
-		visit.voided = false and
+		/*encounter.voided = false and
+		visit.voided = false and*/
 		obs.voided = false and
-		obs.concept_id IN (161033, 5630)
-	GROUP BY
-		visit.visit_id
+		obs.concept_id IN (161033, 5630, 159917)
 	"""
 	maternityQueryList = admin.executeSQL(maternityQuery,false)	
 	return maternityQueryList
@@ -142,7 +133,7 @@ def getAttendancesByLocationAndDate(location, fromDate, toDate) {
 		FROM
 			visit v1
 		WHERE 
-			v1.patient_id = visit.patient_id AND visit.date_started < v1.date_started)
+			v1.patient_id = visit.patient_id AND visit.date_started > v1.date_started)
 	UNION ALL
 	SELECT
 		visit_type.name,
@@ -166,7 +157,7 @@ def getAttendancesByLocationAndDate(location, fromDate, toDate) {
 		FROM
 			visit v1
 		WHERE 
-			v1.patient_id = visit.patient_id AND visit.date_started < v1.date_started)
+			v1.patient_id = visit.patient_id AND visit.date_started > v1.date_started)
 	"""
 	attendances = admin.executeSQL(attendancesQuery,false)
 	return attendances; 
@@ -220,11 +211,17 @@ def getGregorianCalendar(strDateFormat, strDate) {
 }
 
 
+def printHeader(title, location, fromDate, toDate) {
+	print "<h1><center>"+title+"</center></h1><br>"
+	print "<center><table border=1>"
+	print "<tr><td width=\"200px\"><b>Clinic</b></td><td width=\"200px\">" + location + "</td><td width=\"200px\"><b>Date Range</b></td><td width=\"200px\">"+ fromDate +" to " + toDate +"</td></tr>"
+	print "</center></table><br><hr>"
+}
+
+
+
 debug = true
 
-def monthNames = [ "January", "February", "March", "April", "May", "June",
-"July", "August", "September", "October", "November", "December" ];
-print "<h1><center>Form MOH 717</center></h1><br>"
 
 //ARS: END OF Helper functions -- these functions should be located in a common library.  ^^^^ 
 
@@ -240,37 +237,35 @@ use(TimeCategory)
 	//	when in debug mode. For production, debug must be
 	//	set to 0. 
 	if (debug) {
-		fromDate = "2015-03-1"
-		toDate = "2015-03-31"
+		fromDate = "2015-04-26"
+		toDate = "2015-04-26"
 		location = "AMREF"
 	}
 	//
 	def strDateFormat = "yyyy-M-d";
 	def fromDateGC = getGregorianCalendar(strDateFormat, fromDate);
-	fromDateGC.set(Calendar.DAY_OF_MONTH, 1); //First day of the month
+	//fromDateGC.set(Calendar.DAY_OF_MONTH, 1); //First day of the month
 	def referenceDate = new GregorianCalendar();
 	def referenceDate14yo = new GregorianCalendar();
+	referenceDate.setTime(fromDateGC.getTime()-5.years);
 	referenceDate14yo.setTime(fromDateGC.getTime()-14.years);
 	def toDateTempGC = getGregorianCalendar(strDateFormat, toDate);
-	toDateTempGC.set(Calendar.MONTH, toDateTempGC.get(Calendar.MONTH)+1); 
-	toDateTempGC.set(Calendar.DAY_OF_MONTH, 0); 
+	//toDateTempGC.set(Calendar.MONTH, toDateTempGC.get(Calendar.MONTH)+1); 
+	//toDateTempGC.set(Calendar.DAY_OF_MONTH, 0); 
+	toDateTempGC.add(Calendar.DAY_OF_MONTH,1); // BUG FIXED 
 	def toDateAdjusted= toDateTempGC.getTime().format(strDateFormat)
 	def fromDateAdjusted= fromDateGC.getTime().format(strDateFormat)
 	
 	//We need to check if the range is only one month since
 	//	MOH 717 is a monthly report. 
-	
+	/*
 	if ((fromDateGC.get(Calendar.YEAR)!=toDateTempGC.get(Calendar.YEAR) ||
 	    (fromDateGC.get(Calendar.MONTH)!=toDateTempGC.get(Calendar.MONTH)))) {
 		println "<h3><center><b>Error:</b> MOH 717 requires you to select only one month!</center></h3>"
 		return;
-	}
+	}*/
 
-	print "<center><table border=1>"
-	print "<tr><td width=\"150px\"><b>Clinic</b></td><td width=\"150px\">" + location + "</td><td width=\"150px\"><b>Month</b></td><td width=\"150px\">"+monthNames[toDateTempGC.get(Calendar.MONTH)]+ " " +  toDateTempGC.get(Calendar.YEAR)  +"</td></tr>"
-	print "</center></table><br><hr>"
-	print "<center>Note: values shown below are for the entire month.</center>"
-
+	printHeader("MOH 717", location, fromDate, toDate);
 	
 	//For the prescriptions query, there is a number of predefined "sets"
 	//in the database. These concepts/sets are the following: 
@@ -280,15 +275,15 @@ use(TimeCategory)
 	Anti-fungalClass - 162147
 	Anti-TB class - 162148
 	PJP Medication Class - 162149
-	Anti-Parasitic Class - 162150
+	Anti-Parasitic Class - 162151
 	Anti-viral (Not ARV) Class - 162151
 	Antiretroviral Drugs -1085 
 	
 	TODO: Clarify which ones are antibiotics
 	AOTM these are the broader categories: 
+	** Common: All other drugs not in the above categories administed to 14+ y.o. 
 	** Antibiotics: anti-fungal, anti-TB, anti-malarial, antibiotics. 
 	** Special: PJP, anti-parasistic, anti-viral, and anti-retroviral. 
-	** Common: All other drugs not in the above categories administed to 14+ y.o. 
 	** Children: All other drugs administered to children.
 		* Type 0: Common 
 		* Type 1: Antibiotics
@@ -309,7 +304,7 @@ use(TimeCategory)
 	//Process Data
 	//General table skeleton
 	dataTableOutpatients = [ // format : col1 , col2, col3, col4, colour_flag 
-	["A. GENERAL OUTPATIENT (FILTER CLINICS)", "NEW PATIENTS", "RE-ATTENDANCES", "TOTAL",1],
+	["A. GENERAL OUTPATIENT ", "NEW PATIENTS", "RE-ATTENDANCES", "TOTAL",1],
 	["A.1.1 Over 5 - Male ", 0, 0, 0,0],
 	["A.1.2 Over 5 - Female ", 0, 0, 0,0],
 	["A.1.3 Children Under 5 - Male ", 0, 0, 0,0],
@@ -332,7 +327,7 @@ use(TimeCategory)
 	["A.4.4 FP Attendances", 0, 0, 0,0],
 	["A.4.5 TOTAL MCH/FP", 0, 0, 0,2],
 	["A.5 DENTAL CLINIC ", "", "", "",1],
-	["A.5.1 Attendances (excluding fillings and extractions)", 0, 0, 0,0],
+	["A.5.1 Attendances", 0, 0, 0,0],
 	["A.5.2 Fillings", 0, 0, 0,0],
 	["A.5.3 Extractions", 0, 0, 0,0],
 	["A.5.4 TOTAL DENTAL SERVICES", 0, 0, 0,2],
@@ -343,11 +338,11 @@ use(TimeCategory)
 	]; //End of dataTableOutpatients
 
 	dataTableInpatients = [ // format : col1 , col2, col3, col4, col5, col5, colour_flag 
-	["B.1 INPATIENTS", "GENERAL ADULTS", "GENERAL PEDIATRICS", "MATERNITY MOTHERS","AMENITY","TOTAL",1],
+	["B.1 INPATIENTS", "GEN. ADULTS", "GEN. PEDIATRICS", "MATERNITY MOTHERS","AMENITY","TOTAL",1],
 	["B.1.1 Discharges ", 0, 0, 0, 0, 0, 0],
 	["B.1.2 Deaths ", 0, 0, 0, 0, 0, 0],
 	["B.1.3 Abscondees ", 0, 0, 0, 0, 0, 0],
-	["B.1.4 TOTAL DISCHARGES, DEATHS, ETC", 0, 0, 0, 0, 0, 2],
+	["B.1.4 TOTAL DISCHARGES & DEATHS", 0, 0, 0, 0, 0, 2],
 	["B.1.9 Admissions ", 0, 0, 0, 0, 0, 0],
 	["B.1.10 Paroles ", 0, 0, 0, 0, 0, 0],
 	["B.1.11 Occupied Bed Days - NHIF", 0, 0, 0, 0, 0, 0],
@@ -430,7 +425,7 @@ use(TimeCategory)
 				} else if (row[1].toUpperCase() == "M" && row[2] >= referenceDate.getTime()) {    
 					dataTableOutpatients[3][indexReAtt]++;
 					dataTableOutpatients[3][3]++;
-				} else if (row[1].toUpperCase() == "F" && row[2] < referenceDate.getTime()) {    
+				} else if (row[1].toUpperCase() == "F" && row[2] < referenceDate.getTime()) {   
 					dataTableOutpatients[2][indexReAtt]++;
 					dataTableOutpatients[2][3]++;
 				} else if (row[1].toUpperCase() == "F" && row[2] >= referenceDate.getTime()) {    
@@ -445,6 +440,7 @@ use(TimeCategory)
 			case 'CCC-HIV':
 				dataTableOutpatients[11][indexReAtt]++;
 				dataTableOutpatients[11][3]++;
+				break; 
 			case 'MATERNITY':
 			case 'PEDIATRICS':
 			case 'NUTRITION':
