@@ -414,10 +414,10 @@ use(TimeCategory)
 	[161777,"Urinary Tract Infections"],
 	[161740,"Bilharzia"],
 	[161761,"Malnutrition"],
-	[161739,"Aneamia"],
+	[161739,"Anaemia"],
 	[161756,"Eye infections"],
 	[161754,"Ear infections"],
-	[161766,"Other dis. of repiratory system"],
+	[161766,"Other dis. of respiratory system"],
 	[161768,"Pneumonia"],
 	[161723,"Abortion"],
 	[161750,"Dis. of puerperium and childbirth"],
@@ -645,6 +645,7 @@ use(TimeCategory)
 		println "</table>"
 
 }
+
 
 
 

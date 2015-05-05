@@ -25,8 +25,8 @@ def getEncounterNumberbyLocationAndDateRange(location, fromDate, toDate) {
 	WHERE	
 		encounter.location_id = location.location_id AND
 		location.name = '${location}' AND
-		encounter.date_created >= DATE('${fromDate}') AND
-		encounter.date_created <= DATE('${toDate}') AND
+		encounter.encounter_datetime >= DATE('${fromDate}') AND
+		encounter.encounter_datetime <= DATE('${toDate}') AND
 		encounter.voided = false 
 	"""
 	numEncountersList = admin.executeSQL(numEncountersQuery,false)	
@@ -44,17 +44,18 @@ def getMaternityOutcomeByLocationAndDateRange(location, fromDate, toDate) {
 	def maternityQuery = """
 	SELECT obs.value_coded
 	FROM 
-		/*visit, encounter,*/ obs, location
+		/*visit,*/ encounter, obs, location
 	WHERE
 		location.name = '${location}' and	
 		location.location_id = obs.location_id and
-		/*visit.visit_id = encounter.visit_id and
-		encounter.encounter_id = obs.encounter_id and*/
+		/*visit.visit_id = encounter.visit_id and*/
+		encounter.form_id = 19 and /*This is checking only for LD + 2 form*/
+		encounter.encounter_id = obs.encounter_id and
 		obs.date_created >= DATE('${fromDate}') and
 		obs.date_created <= DATE('${toDate}') and
 		obs.voided = false and	
-		/*encounter.voided = false and
-		visit.voided = false and*/
+		encounter.voided = false and
+		/*visit.voided = false and*/
 		obs.voided = false and
 		obs.concept_id IN (161033, 5630, 159917)
 	"""
@@ -526,10 +527,10 @@ use(TimeCategory)
 	for (row in maternityList) {
 		if(row[0]==159916) //Fresh Stillbirth
 		{
-			dataTableMaternity[2][1]++; 
+			dataTableMaternity[3][1]++; 
 		} else if (row[0]==135436) //Macerated stillbirth 
 		{
-			dataTableMaternity[3][1]++;
+			dataTableMaternity[4][1]++;
 		} else if (row[0]==1170 || row[0]==118159) //Vaginal and assisted birth
 		{
 			dataTableMaternity[1][1]++;
@@ -572,5 +573,6 @@ use(TimeCategory)
 	println "</center></td></tr></table>"
 
 }
+
 
 
