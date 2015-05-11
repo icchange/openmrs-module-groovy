@@ -113,7 +113,7 @@ public class CustomReportFormController {
     		@RequestParam(value="aval9", required = false) String val9
     	)
     {
-    	Integer reportId = -1;
+    	Integer reportId = 6;
     	if (selectId != null){
     		reportId = Integer.parseInt(selectId);
     	}
