@@ -218,8 +218,8 @@
     <label id="projection" style="display:none">EPSG:3857</label>
     <div id="map" class="map"></div> -->
     
-	<link rel="stylesheet" href="http://openlayers.org/en/v3.0.0/css/ol.css" type="text/css">
-    <script src="http://openlayers.org/en/v3.0.0/build/ol.js" type="text/javascript"></script>
+	<openmrs:htmlInclude file="/scripts/ol.js" />
+	<openmrs:htmlInclude file="/scripts/ol.css" />
    
 	
 </form>
